@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'data/loaddata.dart';
+import 'domain/affirmation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,11 +36,18 @@ class ScaffoldSample extends StatelessWidget {
   }
 }
 
-class AffirmationCard extends StatelessWidget {
+class AffirmationCard extends StatefulWidget {
   final String imagePath;
   final String title;
 
   const AffirmationCard({super.key, required this.imagePath, required this.title});
+
+  @override
+  _AffirmationCardState createState() => _AffirmationCardState();
+}
+
+class _AffirmationCardState extends State<AffirmationCard> {
+  int likeCount = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +58,7 @@ class AffirmationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Image.asset(
-            imagePath,
+            widget.imagePath,
             height: 194,
             width: 600,
             fit: BoxFit.cover,
@@ -57,10 +66,34 @@ class AffirmationCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              title,
+              widget.title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 40),
+              style: const TextStyle(fontSize: 20),
             ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.thumb_up),
+                onPressed: () {
+                  setState(() {
+                    likeCount++;
+                  });
+                },
+              ),
+              Text('$likeCount'),
+              const SizedBox(width: 20),
+              IconButton(
+                icon: const Icon(Icons.thumb_down),
+                onPressed: () {
+                  setState(() {
+                    if (likeCount > 0) likeCount--;
+                  });
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -73,13 +106,17 @@ class AffirmationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: const [
-        AffirmationCard(imagePath: "assets/image1.jpg", title: "Affirmation 1"),
-        AffirmationCard(imagePath: "assets/image2.jpg", title: "Affirmation 2"),
-        AffirmationCard(imagePath: "assets/image3.jpg", title: "Affirmation 3"),
-        AffirmationCard(imagePath: "assets/image4.jpg", title: "Affirmation 4"),
-      ],
-    );    
+    final affirmations = loaddata();
+
+    return ListView.builder(
+      itemCount: affirmations.length,
+      itemBuilder: (context, index) {
+        final affirmation = affirmations[index];
+        return AffirmationCard(
+          imagePath: affirmation.image,
+          title: affirmation.desc,
+        );
+      },
+    );
   }
 }
