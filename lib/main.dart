@@ -1,122 +1,217 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'data/loaddata.dart';
 import 'domain/affirmation.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GoRouter _router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => AffirmationList(),
+      ),
+      GoRoute(
+        path: '/image',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return ImagePage(
+            imagePath: args['image'],
+            desc: args['desc'],
+            likes: args['likes'],
+            dislikes: args['dislikes'],
+          );
+        },
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
-      title: 'Activity 2',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const ScaffoldSample(),
     );
   }
 }
 
-class ScaffoldSample extends StatelessWidget {
-  const ScaffoldSample({super.key});
+class AffirmationList extends StatefulWidget {
+  @override
+  _AffirmationListState createState() => _AffirmationListState();
+}
+
+class _AffirmationListState extends State<AffirmationList> {
+  final List<Affirmation> affirmations = loaddata();
+  late List<int> likes;
+  late List<int> dislikes;
+
+  @override
+  void initState() {
+    super.initState();
+    likes = List.generate(affirmations.length, (index) => 0);
+    dislikes = List.generate(affirmations.length, (index) => 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Affirmation List")),
+      body: ListView.builder(
+        itemCount: affirmations.length,
+        itemBuilder: (context, index) {
+          return Card(
+            margin: EdgeInsets.all(12),
+            elevation: 5,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    context.push(
+                      '/image',
+                      extra: {
+                        'image': affirmations[index].image,
+                        'desc': affirmations[index].desc,
+                        'likes': likes[index],
+                        'dislikes': dislikes[index],
+                      },
+                    );
+                  },
+                  child: Image.asset(
+                    affirmations[index].image,
+                    height: 194,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    affirmations[index].desc,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.thumb_up),
+                      onPressed: () {
+                        setState(() {
+                          likes[index]++;
+                        });
+                      },
+                    ),
+                    Text('${likes[index]}'),
+                    IconButton(
+                      icon: Icon(Icons.thumb_down),
+                      onPressed: () {
+                        setState(() {
+                          if (dislikes[index] > 0) dislikes[index]--;
+                        });
+                      },
+                    ),
+                    Text('${dislikes[index]}'),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ImagePage extends StatefulWidget {
+  final String imagePath;
+  final String desc;
+  final int likes;
+  final int dislikes;
+
+  ImagePage({
+    required this.imagePath,
+    required this.desc,
+    required this.likes,
+    required this.dislikes,
+  });
+
+  @override
+  _ImagePageState createState() => _ImagePageState();
+}
+
+class _ImagePageState extends State<ImagePage> {
+  late int likes;
+  late int dislikes;
+
+  @override
+  void initState() {
+    super.initState();
+    likes = widget.likes;
+    dislikes = widget.dislikes;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Affirmations"),
+        title: Text("Image Detail"),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // Go back to the previous page
+          },
+        ),
       ),
-      body: const AffirmationList(),
-    );
-  }
-}
-
-class AffirmationCard extends StatefulWidget {
-  final String imagePath;
-  final String title;
-
-  const AffirmationCard({super.key, required this.imagePath, required this.title});
-
-  @override
-  _AffirmationCardState createState() => _AffirmationCardState();
-}
-
-class _AffirmationCardState extends State<AffirmationCard> {
-  int likeCount = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Image.asset(
-            widget.imagePath,
-            height: 194,
-            width: 600,
-            fit: BoxFit.cover,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              widget.title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              widget.imagePath,
+              fit: BoxFit.contain,
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.thumb_up),
-                onPressed: () {
-                  setState(() {
-                    likeCount++;
-                  });
-                },
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                widget.desc,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              Text('$likeCount'),
-              const SizedBox(width: 20),
-              IconButton(
-                icon: const Icon(Icons.thumb_down),
-                onPressed: () {
-                  setState(() {
-                    if (likeCount > 0) likeCount--;
-                  });
-                },
-              ),
-            ],
-          ),
-        ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.thumb_up),
+                  onPressed: () {
+                    setState(() {
+                      likes++;
+                    });
+                  },
+                ),
+                Text('$likes'),
+                IconButton(
+                  icon: Icon(Icons.thumb_down),
+                  onPressed: () {
+                    setState(() {
+                      if (dislikes > 0) dislikes--;
+                    });
+                  },
+                ),
+                Text('$dislikes'),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class AffirmationList extends StatelessWidget {
-  const AffirmationList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final affirmations = loaddata();
-
-    return ListView.builder(
-      itemCount: affirmations.length,
-      itemBuilder: (context, index) {
-        final affirmation = affirmations[index];
-        return AffirmationCard(
-          imagePath: affirmation.image,
-          title: affirmation.desc,
-        );
-      },
     );
   }
 }
